@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Robot Control</title>
+  </head>
+  <body>
+    <button id="btnOn">LED ON</button>
+    <button id="btnOff">LED OFF</button><br />
+    <div id="ledState">LED: UNKNOWN</div>
+
+    <pre id="log"></pre>
+
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <script>
+      const ROBOT_ID = "rb01";
+      const topicCmd = `robots/${ROBOT_ID}/cmd`;
+      const topicStatus = `robots/${ROBOT_ID}/status`;
+
+      const url =
+        "wss://fd15bc00ad9b496daa47e8753a621692.s1.eu.hivemq.cloud:8884/mqtt";
+
+      const options = {
+        username: "web_user",
+        password: "Web123456789",
+        clientId:
+          "web_" + crypto.getRandomValues(new Uint32Array(1))[0].toString(16),
+        clean: true,
+        connectTimeout: 4000,
+        reconnectPeriod: 2000,
+      };
+
+      const logEl = document.getElementById("log");
+      const btnOn = document.getElementById("btnOn");
+      const btnOff = document.getElementById("btnOff");
+      const ledStateEl = document.getElementById("ledState");
+
+      const log = (s) => (logEl.textContent += s + "\n");
+
+      // กันกดก่อนเชื่อมต่อ
+      btnOn.disabled = true;
+      btnOff.disabled = true;
+
+      log("creating mqtt client...");
+      const client = mqtt.connect(url, options);
+
+      let subscribed = false;
+
+      client.on("connect", () => {
+        log("MQTT connected (web)");
+        btnOn.disabled = false;
+        btnOff.disabled = false;
+
+        if (!subscribed) {
+          client.subscribe(topicStatus, { qos: 1 }, (err) => {
+            if (err) log("subscribe err: " + err.message);
+            else {
+              subscribed = true;
+              log("subscribed: " + topicStatus);
+            }
+          });
+        }
+      });
+
+      // เหลือ message handler แค่อันเดียว
+      client.on("message", (topic, message) => {
+        const text = message.toString();
+        log("rx " + topic + " : " + text);
+
+        try {
+          const data = JSON.parse(text);
+          if (data.type === "state" && data.led) {
+            ledStateEl.textContent = "LED: " + String(data.led).toUpperCase();
+          }
+        } catch (e) {
+          // ignore non-JSON
+        }
+      });
+
+      client.on("reconnect", () => log("MQTT reconnecting..."));
+      client.on("close", () => log("MQTT closed"));
+      client.on("error", (e) => log("MQTT error: " + e.message));
+
+      function sendLed(value) {
+        if (!client.connected) {
+          log("not connected yet; try again");
+          return;
+        }
+
+        const payload = {
+          cmd_id: crypto.randomUUID(), // แนะนำให้มี
+          cmd: "led",
+          value,
+          ts: Date.now(),
+        };
+
+        client.publish(topicCmd, JSON.stringify(payload), { qos: 1 }, (err) => {
+          if (err) log("publish err: " + err.message);
+          else log("published: " + JSON.stringify(payload));
+        });
+      }
+
+      btnOn.onclick = () => sendLed("on");
+      btnOff.onclick = () => sendLed("off");
+    </script>
+  </body>
+</html>

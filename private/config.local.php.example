@@ -1,0 +1,32 @@
+<?php
+declare(strict_types=1);
+
+const APP_ENV = 'local';
+
+const DB_HOST = '127.0.0.1';
+const DB_NAME = 'robotdb';
+const DB_USER = 'root';
+const DB_PASS = '';
+
+const DEFAULT_ROBOT_NAME = 'RB-01';
+
+/**
+ * Token สำหรับ ESP32 (ส่งใน header X-Robot-Token)
+ * ตั้งเป็นค่าสุ่มยาวๆ
+ */
+const ROBOT_TOKEN = 'CHANGE_ME_ROBOT_TOKEN_LONG_RANDOM';
+
+/**
+ * Session name
+ */
+const SESSION_NAME = 'robot_sess';
+
+/**
+ * Secret สำหรับ CSRF / security
+ */
+const APP_SECRET = 'CHANGE_ME_APP_SECRET_LONG_RANDOM';
+
+/**
+ * Log file path
+ */
+const LOG_FILE = __DIR__ . '/logs/app.log';

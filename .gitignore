@@ -1,0 +1,28 @@
+# OS junk
+.DS_Store
+Thumbs.db
+
+# logs
+private/logs/
+*.log
+
+# secrets / local config
+private/config.local.php
+private/.env
+
+# keys & certs
+private/*.key
+private/*.pem
+
+# deps (if any)
+vendor/
+node_modules/
+
+
+# ignore everything in private by default
+private/**
+
+# allow placeholders / examples to be committed
+!private/.gitkeep
+!private/.env.example
+!private/config.local.php.example

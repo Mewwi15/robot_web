@@ -1,0 +1,44 @@
+CREATE DATABASE IF NOT EXISTS robotdb
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+USE robotdb;
+
+CREATE TABLE IF NOT EXISTS robots (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  name VARCHAR(64) NOT NULL UNIQUE,
+  state ENUM('READY','QUEUED','MOVING','ARRIVED','ERROR','OFFLINE','E-STOP') NOT NULL DEFAULT 'READY',
+  last_target TINYINT UNSIGNED NULL,
+  active_command_id CHAR(36) NULL,
+  last_seen_at TIMESTAMP NULL,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  INDEX (state),
+  INDEX (last_seen_at)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS commands (
+  id CHAR(36) NOT NULL,              -- UUID
+  robot_id INT UNSIGNED NOT NULL,
+  room TINYINT UNSIGNED NOT NULL,    -- 1..4
+  status ENUM('queued','sent','done','error','canceled') NOT NULL DEFAULT 'queued',
+  message VARCHAR(255) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  sent_at TIMESTAMP NULL,
+  reported_at TIMESTAMP NULL,
+  PRIMARY KEY (id),
+  INDEX idx_robot_status_created (robot_id, status, created_at),
+  CONSTRAINT fk_commands_robot
+    FOREIGN KEY (robot_id) REFERENCES robots(id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS estop (
+  id TINYINT UNSIGNED NOT NULL,
+  enabled TINYINT(1) NOT NULL DEFAULT 0,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO robots (name, state) VALUES ('RB-01', 'READY');
+INSERT IGNORE INTO estop (id, enabled) VALUES (1, 0);
